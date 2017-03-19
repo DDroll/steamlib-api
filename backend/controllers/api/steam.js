@@ -5,10 +5,6 @@ function getUserIdByNickname(nickname, apikey) {
         let url = `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key=${apikey}&vanityurl=${nickname}`;
         request(url, (err, res, body) => {
             let respJson = JSON.parse(body);
-            console.log(url);
-            console.log(respJson);
-            console.log(respJson.response.success);
-            console.log( res.statusCode);
             if(err || (respJson && respJson.response && respJson.response.success!== 1)
                 || !(res.statusCode === 200|| res.statusCode === 304)){
                 reject();
