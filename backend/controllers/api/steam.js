@@ -1,5 +1,24 @@
 const request = require('request');
 
+function getUserIdByNickname(nickname, apikey) {
+    return new Promise(function (resolve, reject) {
+        let url = `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key=${apikey}&vanityurl=${nickname}`;
+        request(url, (err, res, body) => {
+            let respJson = JSON.parse(body);
+            console.log(url);
+            console.log(respJson);
+            console.log(respJson.response.success);
+            console.log( res.statusCode);
+            if(err || (respJson && respJson.response && respJson.response.success!== 1)
+                || !(res.statusCode === 200|| res.statusCode === 304)){
+                reject();
+            } else {
+                resolve(respJson.response.steamid);
+            }
+        })
+    });
+}
+
 function makeSteamRequest(url){
   return  {
     method : 'get',
@@ -29,12 +48,15 @@ function checkResponse(err, stResp, body){
 
 exports.userInfo = (req, res)=>{
   const apiKey = req.query.apikey;
-  const userId = req.query.uid;
-  let options =  makeSteamRequest(`http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${userId}`);
-
-  request(options, (err, steamRes, body) => {
-    res.json(checkResponse(err, steamRes, body));
-  });
+  const nickname = req.query.nickname;
+  getUserIdByNickname(nickname, apiKey).then(function (steamid) {
+      let options =  makeSteamRequest(`http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${steamid}`);
+      request(options, (err, steamRes, body) => {
+          res.json(checkResponse(err, steamRes, body));
+      });
+  }, function () {
+      res.json({'error': 'user not found'});
+  })
 };
 
 exports.getUserApps = (req, res)=>{
